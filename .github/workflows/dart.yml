@@ -7,31 +7,49 @@ jobs:
   build-ios:
     name: 🎉 iOS Build
     runs-on: macos-latest
+
     steps:
+      # Lấy code
       - uses: actions/checkout@v3
 
+      # Cài Flutter
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           architecture: x64
-      - run: flutter pub get
-      
 
+      # Cài dependencies
+      - run: flutter pub get
+
+      # Cập nhật pod
       - run: pod repo update
         working-directory: ios
 
+      # Build iOS không ký
       - run: flutter build ios --release --no-codesign
 
+      # Chuẩn bị thư mục Payload
       - run: mkdir Payload
         working-directory: build/ios/iphoneos
 
+      # Đưa Runner.app vào Payload
       - run: mv Runner.app/ Payload
         working-directory: build/ios/iphoneos
 
+      # Nén thành file IPA
       - name: Zip output
         run: zip -qq -r -9 FlutterIpaExport.ipa Payload
         working-directory: build/ios/iphoneos
 
+      # Tạo tag nếu chưa có
+      - name: Create tag if not exists
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag v1.0 || true
+          git push origin v1.0 || true
+
+      # Upload IPA vào Release
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
