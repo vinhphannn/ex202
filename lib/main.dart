@@ -55,7 +55,7 @@ class _LedControlPageState extends State<LedControlPage> {
   final double controlAreaFixedHeight = 280; 
 
   // ====================================================
-  // LOGIC MQTT & DATA (Giữ nguyên)
+  // LOGIC MQTT & DATA (ĐÃ SỬA THEO BẢN GỐC)
   // ====================================================
   @override
   void initState() {
@@ -118,9 +118,8 @@ class _LedControlPageState extends State<LedControlPage> {
     );
   }
 
+  // LOGIC KẾT NỐI ĐƯỢC ĐƠN GIẢN HÓA NHƯ BẢN GỐC
   Future<void> _connectMQTT() async {
-    if (isConnected || (_client.connectionStatus?.state == MqttConnectionState.connecting)) return;
-    
     _client = MqttServerClient(_brokerIp, "flutter_client_${DateTime.now().millisecondsSinceEpoch}");
 
     _client.port = 1883;
@@ -129,23 +128,20 @@ class _LedControlPageState extends State<LedControlPage> {
 
     _client.onConnected = () => setState(() => isConnected = true);
     _client.onDisconnected = () => setState(() => isConnected = false);
-    _client.onSubscribed = (topic) => print('Subscribed to $topic');
-    _client.onSubscribeFail = (topic) => print('Failed to subscribe to $topic');
+    // Đã loại bỏ onSubscribed và onSubscribeFail
     
     try {
       await _client.connect();
     } catch (e) {
-      print('MQTT connection failed: $e');
+      // print('MQTT connection failed: $e'); // Có thể bỏ comment để debug
       _client.disconnect();
     }
     setState(() {});
   }
 
+  // LOGIC GỬI LỆNH ĐƯỢC ĐƠN GIẢN HÓA NHƯ BẢN GỐC
   void _publishLed(bool turnOn) {
-    if (!isConnected) {
-      _connectMQTT();
-      return;
-    }
+    if (!isConnected) return; // Chỉ kiểm tra kết nối, không gọi lại _connectMQTT
 
     final builder = MqttClientPayloadBuilder();
     builder.addString(turnOn ? "1" : "0");
@@ -158,10 +154,7 @@ class _LedControlPageState extends State<LedControlPage> {
   }
 
   void _publishIntensity(double intensity) {
-    if (!isConnected) {
-      _connectMQTT();
-      return;
-    }
+    if (!isConnected) return; // Chỉ kiểm tra kết nối, không gọi lại _connectMQTT
 
     final builder = MqttClientPayloadBuilder();
     builder.addString(intensity.toStringAsFixed(2));
@@ -174,7 +167,7 @@ class _LedControlPageState extends State<LedControlPage> {
   }
 
   //====================================================
-  // GIAO DIỆN CHÍNH (Sử dụng Stack toàn màn hình)
+  // GIAO DIỆN CHÍNH
   //====================================================
   @override
   Widget build(BuildContext context) {
@@ -222,8 +215,7 @@ class _LedControlPageState extends State<LedControlPage> {
             ),
           ),
           
-          // 2. Phần Đèn (Fixed ở trên)
-          // Bọc trong IgnorePointer để không chặn các sự kiện chạm cho HeaderControls
+          // 2. Phần Đèn (Fixed ở trên) - Bọc trong IgnorePointer để không chặn nút Settings
           IgnorePointer(
             child: _LightDisplay(
               ledState: ledState,
