@@ -43,7 +43,6 @@ class _LedControlPageState extends State<LedControlPage> {
   final double lightHeight = 50; 
 
   // Vị trí của bóng đèn (light.png) TÍNH TƯƠNG ĐỐI VỚI lamp.png
-  // GIẢ ĐỊNH: Nếu lampTop = -50, lightTopOffset = 250 => Đèn treo ở ~200px từ đỉnh màn hình
   final double lightTopOffset = 250; 
   final double lightRightOffset = 41; 
 
@@ -52,8 +51,7 @@ class _LedControlPageState extends State<LedControlPage> {
   final double glowRightOffset = 20; 
   final double glowSize = 200; 
 
-  // Chiều cao dự kiến của khu vực đèn treo (để tính vị trí bắt đầu của điều khiển)
-  // Đây là chiều cao cố định của khối điều khiển khi có Slider.
+  // Chiều cao dự kiến của khu vực điều khiển (fixed height)
   final double controlAreaFixedHeight = 280; 
 
   // ====================================================
@@ -183,15 +181,15 @@ class _LedControlPageState extends State<LedControlPage> {
     final double headerHeight = MediaQuery.of(context).padding.top + 50; 
 
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 28, 54, 46), 
+      backgroundColor: const Color(0xFF1C362E), // Màu nền gốc từ design
       body: Stack(
         children: [
-          // 1. Phần Điều Khiển (Lớp dưới, căn DƯỚI CÙNG với chiều cao cố định)
+          // 1. Phần Điều Khiển (Lớp dưới)
           Positioned(
             bottom: 0, 
             left: 0,
             right: 0,
-            height: controlAreaFixedHeight, // Chiều cao cố định đủ chỗ cho Slider
+            height: controlAreaFixedHeight, 
             child: LightControlView(
               ledState: ledState,
               lightIntensity: lightIntensity,
@@ -223,8 +221,26 @@ class _LedControlPageState extends State<LedControlPage> {
               brokerIp: _brokerIp,
             ),
           ),
+          
+          // 2. Phần Đèn (Fixed ở trên)
+          // Bọc trong IgnorePointer để không chặn các sự kiện chạm cho HeaderControls
+          IgnorePointer(
+            child: _LightDisplay(
+              ledState: ledState,
+              lightIntensity: lightIntensity,
+              lampTop: lampTop,
+              lampRight: lampRight,
+              lampWidth: lampWidth,
+              lightHeight: lightHeight,
+              lightTopOffset: lightTopOffset,
+              lightRightOffset: lightRightOffset,
+              glowTopOffset: glowTopOffset,
+              glowRightOffset: glowRightOffset,
+              glowSize: glowSize,
+            ),
+          ),
 
-          // 2. Header Controls (Icon, Kitchen, Settings) (Lớp giữa, căn trên cùng)
+          // 3. Header Controls (Lớp TRÊN CÙNG để có thể bấm nút Settings)
           Positioned(
             top: 0,
             left: 0,
@@ -232,22 +248,6 @@ class _LedControlPageState extends State<LedControlPage> {
             child: _HeaderControls(
               onOpenIpDialog: _openIpDialog,
             ),
-          ),
-          
-          // 3. Phần Đèn (Fixed ở trên, ĐÈ LÊN tất cả, sử dụng các biến tùy chỉnh)
-          // Để đèn không bị che bởi khối điều khiển, ta đặt nó cao hơn
-          _LightDisplay(
-            ledState: ledState,
-            lightIntensity: lightIntensity,
-            lampTop: lampTop,
-            lampRight: lampRight,
-            lampWidth: lampWidth,
-            lightHeight: lightHeight,
-            lightTopOffset: lightTopOffset,
-            lightRightOffset: lightRightOffset,
-            glowTopOffset: glowTopOffset,
-            glowRightOffset: glowRightOffset,
-            glowSize: glowSize,
           ),
         ],
       ),
@@ -413,16 +413,15 @@ class LightControlView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Để căn đều nội dung xuống dưới cùng và chiếm toàn bộ không gian được cấp
     return Align(
-      alignment: Alignment.topCenter, // Căn trên cùng của khu vực được cấp (Positioned)
+      alignment: Alignment.topCenter, 
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(40.0, 0, 40.0, 40.0), // Padding bên ngoài
+        padding: const EdgeInsets.fromLTRB(40.0, 0, 40.0, 40.0), 
         child: SingleChildScrollView(
           physics: const ClampingScrollPhysics(), 
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.max, // Cho phép Column chiếm hết chiều cao của SingleChildScrollView
+            mainAxisSize: MainAxisSize.max, 
             children: [
               // Thông tin kết nối (CHỈ HIỂN THỊ KHI CHƯA KẾT NỐI)
               if (!isConnected)
@@ -450,7 +449,7 @@ class LightControlView extends StatelessWidget {
 
               // Công tắc ON/OFF
               Row(
-                mainAxisAlignment: MainAxisAlignment.start, // Dạt trái
+                mainAxisAlignment: MainAxisAlignment.start, 
                 children: [
                   Row(
                     mainAxisSize: MainAxisSize.min,
@@ -478,7 +477,6 @@ class LightControlView extends StatelessWidget {
               ),
               
               // Thanh trượt điều chỉnh cường độ
-              // Sử dụng Opacity + AnimatedOpacity để tránh nhảy khi ẩn/hiện, nhưng vẫn giữ chỗ.
               AnimatedOpacity(
                 opacity: ledState ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 300),
